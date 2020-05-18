@@ -1,8 +1,10 @@
+
 use clap::Clap;
 use std::error::Error;
 use std::fs::{File,OpenOptions};
 use std::path::Path;
 use std::io::prelude::*;
+use chrono::{Timelike};
 
 const LOG:&str = ".rgit/log.txt";
 
@@ -25,12 +27,14 @@ struct Commit{
 
 pub fn cli_parser(){
 
+    let time = chrono::offset::Utc::now(); 
+    let date = time.date();
+    let timestamp = format!("Timestamp: {} {:02}:{:02}:{:02}",
+                        date,time.hour(),time.minute(),time.second());
     let opts = Opts::parse();
-
     match opts.subcmd{
         SubCommand::Commit(mut x) => {
-            x.message = x.message + "\n";
-            println!("Your commit: {}",x.message);
+            x.message = format!("{}\n\tMessage: {} \n",timestamp,x.message);
             match OpenOptions::new()
                                     .read(true)
                                     .append(true)

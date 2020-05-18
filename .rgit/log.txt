@@ -1,2 +1,4 @@
-first commit
-second commit
+Timestamp: 2020-05-18UTC 04:30:56
+	Message: first commit 
+Timestamp: 2020-05-18UTC 04:30:58
+	Message: bug fixed 

@@ -6,7 +6,10 @@ edition = "2018"
 
 
 [dependencies]
-bytes = "0.5.4"
 clap = "3.0.0-beta.1"
 chrono = "0.4.11"
+sha2 = "0.8.1"
+bincode = "1.2.1"
+serde = "1.0.110"
 subprocess = "0.2.4"
+nohash-hasher = "0.2.0"

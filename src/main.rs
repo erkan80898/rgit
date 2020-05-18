@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use bytes::Bytes;
-mod cli;
+pub mod cli;
+pub mod object_map;
 
 /**
  * Use servo and bincode for seralization of all the states
@@ -8,7 +8,7 @@ mod cli;
  */
 
 struct Blob{
-    data:Bytes,
+    data:Vec<u8>,
 }
 
 struct Tree{
@@ -18,7 +18,7 @@ struct Tree{
 
 
 struct Commit{
-    parents:Vec<Box>
+//    parents:Vec<Box>
     root:Tree,
     //time_stamp:String,
     //author:String,

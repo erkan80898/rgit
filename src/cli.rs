@@ -4,8 +4,10 @@ use std::io::prelude::*;
 use chrono::{Timelike};
 ///TODO: set up vim for commiting if no message is given
 use subprocess;
+use crate::object_map;
 
 const LOG:&str = ".rgit/log.txt";
+const OBJ:&str = ".rgit/obj.data";
 
 #[derive(Clap)]
 #[clap(version = "1.0", author = "Erkan U. <erkan808987@gmail.com>")]
@@ -17,11 +19,17 @@ struct Opts{
 #[derive(Clap)]
 enum SubCommand{
     Commit(Commit),
+    Hash(Object)
 }
 
 #[derive(Clap)]
 struct Commit{
     message:String,
+}
+
+#[derive(Clap)]
+struct Object{
+    file:String,    
 }
 
 pub fn cli_parser(){
@@ -38,8 +46,7 @@ pub fn cli_parser(){
                                     .read(true)
                                     .append(true)
                                     .create(true)
-                                    .open(LOG)
-            {
+                                    .open(LOG){
                 Ok(mut file) => {
                     if let Err(e) = file.write_all(x.message.as_bytes()){
                         panic!("Couldn't the message! Error: {}",e);
@@ -49,8 +56,23 @@ pub fn cli_parser(){
                     panic!("{}",e)
                 }
             }
-
         }
-         _ => (),
+        SubCommand::Hash(mut x) => {
+            //Add file to the object in .rgit folder
+            match OpenOptions::new()
+                                    .read(true)
+                                    .append(false)
+                                    .create(false)
+                                    .open(&x.file){
+                Ok(mut file) =>{
+                    let mut buffer = Vec::new();
+                    if let Err(re) = file.read(&mut buffer){
+                        panic!("Issue reading the file data {}",re)
+                    }
+                    object_map::insert(&x.file,buffer)
+                }
+                Err(e) => panic!("{}",e)
+            }
+        }
     }
 }

@@ -7,3 +7,4 @@ edition = "2018"
 
 [dependencies]
 bytes = "0.5.4"
+clap = "3.0.0-beta.1"

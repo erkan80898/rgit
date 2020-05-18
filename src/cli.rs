@@ -66,7 +66,7 @@ pub fn cli_parser(){
                                     .open(&x.file){
                 Ok(mut file) =>{
                     let mut buffer = Vec::new();
-                    if let Err(re) = file.read(&mut buffer){
+                    if let Err(re) = file.read_to_end(&mut buffer){
                         panic!("Issue reading the file data {}",re)
                     }
                     object_map::insert(&x.file,buffer)

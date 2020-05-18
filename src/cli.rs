@@ -1,10 +1,9 @@
-
 use clap::Clap;
-use std::error::Error;
-use std::fs::{File,OpenOptions};
-use std::path::Path;
+use std::fs::{OpenOptions};
 use std::io::prelude::*;
 use chrono::{Timelike};
+///TODO: set up vim for commiting if no message is given
+use subprocess;
 
 const LOG:&str = ".rgit/log.txt";
 

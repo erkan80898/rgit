@@ -1,4 +1,4 @@
-Timestamp: 2020-05-18UTC 04:30:56
-	Message: first commit 
-Timestamp: 2020-05-18UTC 04:30:58
-	Message: bug fixed 
+Timestamp: 2020-05-18UTC 04:48:57
+	Message: intial commit 
+Timestamp: 2020-05-18UTC 04:49:08
+	Message: intial commit 

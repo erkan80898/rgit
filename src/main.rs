@@ -17,11 +17,12 @@ struct Tree{
 }
 
 
-struct State{
+struct Commit{
+    parents:Vec<Box>
     root:Tree,
-    time_stamp:String,
-    author:String,
-    message:String
+    //time_stamp:String,
+    //author:String,
+    //message:String
 }
 
 

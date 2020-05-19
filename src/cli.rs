@@ -19,7 +19,8 @@ struct Opts{
 #[derive(Clap)]
 enum SubCommand{
     Commit(Commit),
-    Hash(Object)
+    Hash(Object),
+    Add(Tree),
 }
 
 #[derive(Clap)]
@@ -30,6 +31,11 @@ struct Commit{
 #[derive(Clap)]
 struct Object{
     file:String,    
+}
+
+#[derive(Clap)]
+struct Tree{
+    dir_name:String,    
 }
 
 pub fn cli_parser(){
@@ -61,8 +67,6 @@ pub fn cli_parser(){
             //Add file to the object in .rgit folder
             match OpenOptions::new()
                                     .read(true)
-                                    .append(false)
-                                    .create(false)
                                     .open(&x.file){
                 Ok(mut file) =>{
                     let mut buffer = Vec::new();
@@ -73,6 +77,10 @@ pub fn cli_parser(){
                 }
                 Err(e) => panic!("{}",e)
             }
+        }
+
+        SubCommand::Add(x) =>{
+            object_map::set_tree(x.dir_name);
         }
     }
 }

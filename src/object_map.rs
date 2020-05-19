@@ -12,7 +12,7 @@ const OBJ:&str = "./.rgit/stage/obj.bin";
 const STAGING_TREE:&str = "./.rgit/stage/tree.bin";
 
 ///represents files
-#[derive(Debug)]
+#[derive(Debug,Serialize, Deserialize)]
 struct Blob{
     data:Vec<u8>,
 }
@@ -28,7 +28,7 @@ impl Blob{
 /// represents directories or files
 /// maps file names to data
 /// mapes dir names to the tree structure
-#[derive(Debug)]
+#[derive(Debug,Serialize, Deserialize)]
 struct Tree{
     path:String,
     files:HashMap<String,Blob>,
@@ -50,8 +50,6 @@ impl Tree{
     fn build(&mut self) -> Result<(),std::io::Error>{
         for entry in fs::read_dir(&self.path)?{
             let entry = entry?;
-            /// if file, map it by opening file and read_to_end
-            /// if dir, construct a new tree, build it, add it to map
             let path = entry.path();
             let mut name = format!("{}/",&self.path);
             
@@ -91,11 +89,23 @@ pub fn set_tree(name:String){
     let mut tree = Tree::new(name);
     tree.build();
 
-    println!("Dir listing:");
-    println!("{:?}",tree.dir);
+    /// seralize tree into staging area
+    let file = File::create(STAGING_TREE).unwrap();
+    if let Err(e) = bincode::serialize_into(file,&tree){
+        panic!("ERROR: {}",e);
+    }
 
-    println!("File listing:");
-    println!("{:?}",tree.files);
+    let testTree = retrieve_tree();
+
+    println!("{:?}",testTree);
+}
+
+fn retrieve_tree() -> Tree{
+       
+    let file = File::open(STAGING_TREE).unwrap();
+    let x:Tree = bincode::deserialize_from(&file).unwrap();
+        
+    return x
 }
 
 pub fn insert(key:&String,data:Vec<u8>){
@@ -128,8 +138,6 @@ fn retrieve_obj() -> HashMap<u32,Vec<u8>,BuildNoHashHasher<u32>>{
         let file = File::open(OBJ).unwrap();
         let x:HashMap<u32,Vec<u8>,BuildNoHashHasher<u32>> = 
             bincode::deserialize_from(&file).unwrap();
-        
-        assert_eq!(x.contains_key(&1662371),true);
         return x
     }
 

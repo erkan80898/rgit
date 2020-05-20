@@ -3,7 +3,7 @@ use std::path::{Path,PathBuf};
 use std::collections::HashMap;
 use std::fs::{OpenOptions,File};
 use std::io::prelude::*;
-use std::{env, fs};
+use std::fs;
 use serde::{Serialize, Deserialize};
 use nohash_hasher::BuildNoHashHasher;
 
@@ -17,14 +17,6 @@ struct Blob{
     data:Vec<u8>,
 }
 
-impl Blob{
-    fn new(data:Vec<u8>) -> Self{
-        Self{
-            data,
-        }
-    }
-}
-
 /// represents directories or files
 /// maps file names to data
 /// mapes dir names to the tree structure
@@ -33,6 +25,22 @@ struct Tree{
     path:String,
     files:HashMap<String,Blob>,
     dir:HashMap<String,Box<Tree>>,
+}
+
+#[derive(Debug,Serialize, Deserialize)]
+struct Commit{
+    parent:Option<Box<Commit>>,
+    snapshot:Tree,
+    //author:String,
+    message:String
+}
+
+impl Blob{
+    fn new(data:Vec<u8>) -> Self{
+        Self{
+            data,
+        }
+    }
 }
 
 impl Tree{
@@ -62,7 +70,7 @@ impl Tree{
             if fs::metadata(&path).unwrap().is_dir(){
                 let mut sub_tree = Tree::new(name.clone());
 
-                sub_tree.build();
+                sub_tree.build()?;
                 self.dir.insert(name, Box::new(sub_tree));
             }else{
                 let mut file = OpenOptions::new()
@@ -78,11 +86,15 @@ impl Tree{
 
 }
 
-struct Commit{
-    parents:Vec<Box<Commit>>,
-    snapshot:Tree,
-    //author:String,
-    message:String
+impl Commit{
+
+    fn new(message:String,snapshot:Tree) -> Self{
+        Self{
+            parent:None,
+            snapshot,
+            message,
+        }
+    }
 }
 
 pub fn set_tree(name:String){
@@ -102,13 +114,53 @@ pub fn set_tree(name:String){
 
 fn retrieve_tree() -> Tree{
        
-    let file = File::open(STAGING_TREE).unwrap();
+    let file = File::open(STAGING_TREE);
+    if file.is_err(){
+        panic!("Nothing in staging area! Add the directory to commit");
+    }
+    let file = file.unwrap();
     let x:Tree = bincode::deserialize_from(&file).unwrap();
         
     return x
 }
+ 
+/// commit objects in staging area
+pub fn commit(message:String){
+    /// check if any previous commits exist
+    /// if they do, deserialize and add them as ur parents
+    /// otherwise build yourself and serialize
+    let stage_tree:Tree = retrieve_tree();
+    let mut commit:Commit = Commit::new(message,stage_tree);
+    
+    if Path::new(OBJ).exists(){
+        match File::open(OBJ){
+            Ok(file) => {
+                let old_commit:Commit = bincode::deserialize_from(&file).unwrap();
+                commit.parent = Some(Box::new(old_commit));
 
-pub fn insert(key:&String,data:Vec<u8>){
+                if let Err(e) = bincode::serialize_into(file,&commit){
+                    panic!("ERROR: {}",e);
+                }
+            }
+            Err(e) => panic!("ERROR OPENING: {}",e)
+        }
+    }else{
+        match File::create(OBJ){
+            Ok(file) => {
+                if let Err(e) = bincode::serialize_into(file,&commit){
+                    panic!("ERROR: {}",e);
+                }
+            }
+            Err(e) => panic!("ISSUE CREATING FILE: {}", e)
+        }
+        
+    }
+    
+}
+
+/// REFACTOR TO COMMITS INSTEAD
+/// KEY WILL BE THE BASED OFF tree.bin
+pub fn insert(key:&String,commit:Commit){
 
     let mut hasher = Sha256::new();
     hasher.input(key.as_bytes());

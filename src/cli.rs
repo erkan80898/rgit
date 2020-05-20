@@ -19,18 +19,12 @@ struct Opts{
 #[derive(Clap)]
 enum SubCommand{
     Commit(Commit),
-    Hash(Object),
     Add(Tree),
 }
 
 #[derive(Clap)]
 struct Commit{
     message:String,
-}
-
-#[derive(Clap)]
-struct Object{
-    file:String,    
 }
 
 #[derive(Clap)]
@@ -57,28 +51,13 @@ pub fn cli_parser(){
                     if let Err(e) = file.write_all(x.message.as_bytes()){
                         panic!("Couldn't the message! Error: {}",e);
                     }
+                    object_map::commit(x.message);
                 }
                 Err(e) => {
                     panic!("{}",e)
                 }
             }
         }
-        SubCommand::Hash(mut x) => {
-            //Add file to the object in .rgit folder
-            match OpenOptions::new()
-                                    .read(true)
-                                    .open(&x.file){
-                Ok(mut file) =>{
-                    let mut buffer = Vec::new();
-                    if let Err(re) = file.read_to_end(&mut buffer){
-                        panic!("Issue reading the file data {}",re)
-                    }
-                    object_map::insert(&x.file,buffer)
-                }
-                Err(e) => panic!("{}",e)
-            }
-        }
-
         SubCommand::Add(x) =>{
             object_map::set_tree(x.dir_name);
         }

@@ -6,7 +6,6 @@ use chrono::{Timelike};
 use subprocess;
 use crate::object_map;
 
-const LOG:&str = ".rgit/log.txt";
 const OBJ:&str = ".rgit/obj.data";
 
 #[derive(Clap)]
@@ -42,21 +41,7 @@ pub fn cli_parser(){
     match opts.subcmd{
         SubCommand::Commit(mut x) => {
             x.message = format!("{}\n\tMessage: {} \n",timestamp,x.message);
-            match OpenOptions::new()
-                                    .read(true)
-                                    .append(true)
-                                    .create(true)
-                                    .open(LOG){
-                Ok(mut file) => {
-                    if let Err(e) = file.write_all(x.message.as_bytes()){
-                        panic!("Couldn't the message! Error: {}",e);
-                    }
-                    object_map::commit(x.message);
-                }
-                Err(e) => {
-                    panic!("{}",e)
-                }
-            }
+            object_map::commit(x.message);
         }
         SubCommand::Add(x) =>{
             object_map::set_tree(x.dir_name);

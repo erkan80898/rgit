@@ -7,9 +7,10 @@ use std::fs;
 use serde::{Serialize, Deserialize};
 use nohash_hasher::BuildNoHashHasher;
 
-const STAGE:&str = "./.rgit/stage/";
 const OBJ:&str = "./.rgit/stage/obj.bin";
+const NODE:&str = "./.rgit/stage/node.bin";
 const STAGING_TREE:&str = "./.rgit/stage/tree.bin";
+const LOG:&str = ".rgit/log.txt";
 
 ///represents files
 #[derive(Debug,Serialize, Deserialize)]
@@ -84,7 +85,29 @@ impl Tree{
         Ok(())
     }
 
+    fn read(&self,buffer:&mut Vec<u8>){
+        
+        fn helper(dir:&Tree,buffer:&mut Vec<u8>){
+            for (_,val) in dir.files.iter(){
+                buffer.append(&mut (*val).data.clone());
+            }
+
+            for (_,tree) in dir.dir.iter(){
+                helper(&tree,buffer);
+            }
+        }
+
+        for (_,val) in self.files.iter(){
+            buffer.append(&mut (*val).data.clone());
+        }
+
+        for (_,mut tree) in self.dir.iter(){
+            helper(&mut tree,buffer);
+        }
+        
+    }
 }
+
 
 impl Commit{
 
@@ -126,14 +149,15 @@ fn retrieve_tree() -> Tree{
  
 /// commit objects in staging area
 pub fn commit(message:String){
-    /// check if any previous commits exist
-    /// if they do, deserialize and add them as ur parents
-    /// otherwise build yourself and serialize
+    /// TODO FIX SAME KEY ISSUE
     let stage_tree:Tree = retrieve_tree();
     let mut commit:Commit = Commit::new(message,stage_tree);
     
-    if Path::new(OBJ).exists(){
-        match File::open(OBJ){
+    if Path::new(NODE).exists(){
+        match OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(NODE){
             Ok(file) => {
                 let old_commit:Commit = bincode::deserialize_from(&file).unwrap();
                 commit.parent = Some(Box::new(old_commit));
@@ -145,7 +169,7 @@ pub fn commit(message:String){
             Err(e) => panic!("ERROR OPENING: {}",e)
         }
     }else{
-        match File::create(OBJ){
+        match File::create(NODE){
             Ok(file) => {
                 if let Err(e) = bincode::serialize_into(file,&commit){
                     panic!("ERROR: {}",e);
@@ -155,15 +179,36 @@ pub fn commit(message:String){
         }
         
     }
-    
+
+    insert(commit);
+}
+
+fn log(message:String){
+    match OpenOptions::new()
+                        .read(true)
+                        .append(true)
+                        .create(true)
+                        .open(LOG){
+                Ok(mut file) => {
+                    if let Err(e) = file.write_all(message.as_bytes()){
+                        panic!("Couldn't the message! Error: {}",e);
+                    }
+                }
+                Err(e) => {
+                    panic!("{}",e)
+                }
+    }
 }
 
 /// REFACTOR TO COMMITS INSTEAD
-/// KEY WILL BE THE BASED OFF tree.bin
-pub fn insert(key:&String,commit:Commit){
+/// KEY WILL BE THE BASED OFF tree.
+fn insert(commit:Commit){
 
     let mut hasher = Sha256::new();
-    hasher.input(key.as_bytes());
+    let mut buffer:Vec<u8> = Vec::new();
+    commit.snapshot.read(&mut buffer);
+
+    hasher.input(buffer);
 
     let result = hasher.result();
     
@@ -173,8 +218,11 @@ pub fn insert(key:&String,commit:Commit){
     }
     let k = &k[..7];
 
+    log(format!("{}KEY: {}\n",commit.message,k));
+
     let mut obj = retrieve_obj();
-    obj.insert(k.parse().unwrap(),data);
+
+    obj.insert(k.parse().unwrap(),commit);
 
     let file = File::create(OBJ).unwrap();
 
@@ -184,11 +232,11 @@ pub fn insert(key:&String,commit:Commit){
 
 }
 
-fn retrieve_obj() -> HashMap<u32,Vec<u8>,BuildNoHashHasher<u32>>{
+fn retrieve_obj() -> HashMap<u32,Commit,BuildNoHashHasher<u32>>{
        
     if Path::new(OBJ).exists(){
         let file = File::open(OBJ).unwrap();
-        let x:HashMap<u32,Vec<u8>,BuildNoHashHasher<u32>> = 
+        let x:HashMap<u32,Commit,BuildNoHashHasher<u32>> = 
             bincode::deserialize_from(&file).unwrap();
         return x
     }

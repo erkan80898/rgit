@@ -20,7 +20,7 @@ struct Blob{
 
 /// represents directories or files
 /// maps file names to data
-/// mapes dir names to the tree structure
+/// maps dir names to the tree structure
 #[derive(Debug,Serialize, Deserialize)]
 struct Tree{
     path:String,
@@ -124,7 +124,6 @@ pub fn set_tree(name:String){
     let mut tree = Tree::new(name);
     tree.build();
 
-    /// seralize tree into staging area
     let file = File::create(STAGING_TREE).unwrap();
     if let Err(e) = bincode::serialize_into(file,&tree){
         panic!("ERROR: {}",e);
@@ -147,9 +146,50 @@ fn retrieve_tree() -> Tree{
     return x
 }
  
+/// Build the rgit directories 
+/// TODO have a check if dir already exist, so not to wipe
+pub fn init(){
+
+    fs::create_dir("./.rgit");
+    fs::create_dir("./.rgit/stage");
+}
+
+pub fn pull(){
+
+    /// Retrieve tree
+    /// First iter through tree, build dir if it doesnt exit
+    /// add all blobs to their dirs
+    
+
+    fn helper(tree:&Tree){
+        if !Path::new(&tree.path).exists(){
+            fs::create_dir(&tree.path);
+        }
+        for files in tree.files.iter(){
+            match OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(files.0){
+                Ok(mut file) =>{
+                    file.write_all(&files.1.data);
+                }
+                Err(err) => {
+                    panic!("Error from pulling: {}",err);
+                }
+            }
+        }
+    }
+    let tree = retrieve_tree();  
+
+    helper(&tree);
+    for (_,current_tree) in tree.dir.iter(){
+        helper(current_tree);
+    }
+
+}
+
 /// commit objects in staging area
 pub fn commit(message:String){
-    /// TODO FIX SAME KEY ISSUE
     let stage_tree:Tree = retrieve_tree();
     let mut commit:Commit = Commit::new(message,stage_tree);
     
@@ -200,8 +240,6 @@ fn log(message:String){
     }
 }
 
-/// REFACTOR TO COMMITS INSTEAD
-/// KEY WILL BE THE BASED OFF tree.
 fn insert(commit:Commit){
 
     let mut hasher = Sha256::new();

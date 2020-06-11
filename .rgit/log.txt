@@ -7,3 +7,15 @@ KEY: 6979170
 Timestamp: 2020-05-24UTC 02:18:54
 	Message: secondvsfd commit 
 KEY: 6979170
+Timestamp: 2020-06-10UTC 23:51:01
+	Message: test commit 
+KEY: 6979170
+Timestamp: 2020-06-11UTC 00:02:20
+	Message: test commit changed txt in working dir 
+KEY: 6979170
+Timestamp: 2020-06-11UTC 00:02:58
+	Message: test commit changed txt in working dir/real 
+KEY: 1107241
+Timestamp: 2020-06-11UTC 00:23:00
+	Message: added no commit change feature 
+KEY: 1153019

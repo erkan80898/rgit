@@ -2,8 +2,8 @@ use sha2::{Sha256,Digest};
 use std::path::{Path,PathBuf};
 use std::collections::HashMap;
 use std::fs::{OpenOptions,File};
-use std::io::prelude::*;
 use std::fs;
+use std::io::prelude::*;
 use serde::{Serialize, Deserialize};
 use nohash_hasher::BuildNoHashHasher;
 
@@ -218,18 +218,19 @@ fn insert(commit:Commit){
     }
     let k = &k[..7];
 
-    log(format!("{}KEY: {}\n",commit.message,k));
-
     let mut obj = retrieve_obj();
 
-    obj.insert(k.parse().unwrap(),commit);
+    if obj.contains_key(&k.parse().unwrap()){
+        println!("No changes to commit.");
+    }else{
+        log(format!("{}KEY: {}\n",commit.message,k));
+        obj.insert(k.parse().unwrap(),commit);
+        let file = File::create(OBJ).unwrap();
 
-    let file = File::create(OBJ).unwrap();
-
-    if let Err(e) = bincode::serialize_into(file,&obj){
-        panic!("ERROR: {}",e);
+        if let Err(e) = bincode::serialize_into(file,&obj){
+            panic!("ERROR: {}",e);
+        }
     }
-
 }
 
 fn retrieve_obj() -> HashMap<u32,Commit,BuildNoHashHasher<u32>>{

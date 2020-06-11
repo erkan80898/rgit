@@ -20,7 +20,7 @@ enum SubCommand{
     Commit(Commit),
     Add(Tree),
     Init,
-    Pull,
+    Checkout(Key),
 }
 
 #[derive(Clap)]
@@ -33,10 +33,9 @@ struct Tree{
     dir_name:String,    
 }
 #[derive(Clap)]
-struct Init;
-
-#[derive(Clap)]
-struct Pull;
+struct Key{
+    id:String,
+}
 
 pub fn cli_parser(){
 
@@ -54,6 +53,6 @@ pub fn cli_parser(){
         SubCommand::Add(x) =>{
             object_map::set_tree(x.dir_name);
         }
-        SubCommand::Pull =>{object_map::pull()}
+        SubCommand::Checkout(key) =>{object_map::checkout(&key.id)}
     }
 }

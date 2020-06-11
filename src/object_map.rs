@@ -154,13 +154,12 @@ pub fn init(){
     fs::create_dir("./.rgit/stage");
 }
 
-pub fn pull(){
+pub fn checkout(id:&String){
 
     /// Retrieve tree
     /// First iter through tree, build dir if it doesnt exit
     /// add all blobs to their dirs
     
-
     fn helper(tree:&Tree){
         if !Path::new(&tree.path).exists(){
             fs::create_dir(&tree.path);
@@ -169,6 +168,7 @@ pub fn pull(){
             match OpenOptions::new()
             .write(true)
             .truncate(true)
+            .create(true)
             .open(files.0){
                 Ok(mut file) =>{
                     file.write_all(&files.1.data);
@@ -179,9 +179,16 @@ pub fn pull(){
             }
         }
     }
-    let tree = retrieve_tree();  
 
-    helper(&tree);
+    let storage = retrieve_obj();
+    let id:u32 = id.parse().unwrap();
+    if !storage.contains_key(&id){
+        panic!("No commit found for {}", id);
+    }
+
+    let commit = storage.get(&id).unwrap();
+    let tree= &commit.snapshot;
+    helper(tree);
     for (_,current_tree) in tree.dir.iter(){
         helper(current_tree);
     }
@@ -217,7 +224,6 @@ pub fn commit(message:String){
             }
             Err(e) => panic!("ISSUE CREATING FILE: {}", e)
         }
-        
     }
 
     insert(commit);
